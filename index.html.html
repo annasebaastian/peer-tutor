@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-800">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerTutor - Online Peer Tutoring Platform</title>
+
+  <!-- Same single-file format as the supplied example -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef4ff',
+              100: '#dbe8ff',
+              500: '#3b6eea',
+              600: '#2f62d8',
+              700: '#2454c4'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    body { font-family: Arial, Helvetica, sans-serif; }
+    .nav-active { color: #2f62d8 !important; }
+    .view-panel { animation: fadeIn .18s ease-in; }
+    @keyframes fadeIn {
+      from { opacity: .4; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body class="min-h-full bg-slate-50 text-slate-800">
+
+  <!-- Toast -->
+  <div id="toast"
+       class="hidden fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm">
+  </div>
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-5 lg:px-8">
+      <div class="h-20 flex items-center justify-between">
+
+        <!-- Logo -->
+        <button onclick="switchTab('dashboard')"
+                class="text-2xl font-bold text-brand-600 tracking-tight">
+          PeerTutor
+        </button>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center gap-7 text-sm">
+          <button id="nav-dashboard" onclick="switchTab('dashboard')" class="nav-btn nav-active">Dashboard</button>
+          <button id="nav-profile" onclick="switchTab('profile')" class="nav-btn text-slate-600 hover:text-brand-600">My Profile</button>
+          <button id="nav-availability" onclick="switchTab('availability')" class="nav-btn text-slate-600 hover:text-brand-600">Availability</button>
+          <button id="nav-find" onclick="switchTab('find')" class="nav-btn text-slate-600 hover:text-brand-600">Find Peers</button>
+          <button id="nav-requests" onclick="switchTab('requests')" class="nav-btn text-slate-600 hover:text-brand-600">Requests</button>
+          <button id="nav-learning" onclick="switchTab('learning')" class="nav-btn text-slate-600 hover:text-brand-600">My Learning</button>
+        </nav>
+
+        <button onclick="toggleMobileMenu()"
+                class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-5 py-3 space-y-1">
+      <button onclick="switchTab('dashboard');toggleMobileMenu()" class="block w-full text-left px-3 py-2">Dashboard</button>
+      <button onclick="switchTab('profile');toggleMobileMenu()" class="block w-full text-left px-3 py-2">My Profile</button>
+      <button onclick="switchTab('availability');toggleMobileMenu()" class="block w-full text-left px-3 py-2">Availability</button>
+      <button onclick="switchTab('find');toggleMobileMenu()" class="block w-full text-left px-3 py-2">Find Peers</button>
+      <button onclick="switchTab('requests');toggleMobileMenu()" class="block w-full text-left px-3 py-2">Requests</button>
+      <button onclick="switchTab('learning');toggleMobileMenu()" class="block w-full text-left px-3 py-2">My Learning</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-5 lg:px-8 py-12">
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view-panel">
+      <div class="mb-10">
+        <h1 class="text-4xl font-bold text-slate-900">Welcome, Ashwathy</h1>
+        <p class="mt-3 text-lg text-slate-500">
+          Manage your peer tutoring activities and learn from other students.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5 mb-12">
+        <div class="bg-white border border-slate-200 rounded-2xl p-7">
+          <p class="text-slate-500">Subjects</p>
+          <p class="text-3xl font-bold text-slate-900 mt-5">3</p>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-7">
+          <p class="text-slate-500">Availability Slots</p>
+          <p class="text-3xl font-bold text-slate-900 mt-5">3</p>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-7">
+          <p class="text-slate-500">Pending Requests</p>
+          <p id="pending-count" class="text-3xl font-bold text-slate-900 mt-5">3</p>
+        </div>
+      </div>
+
+      <h2 class="text-2xl font-bold text-slate-900 mb-6">Upcoming Tutoring Requests</h2>
+      <div id="dashboard-requests" class="space-y-5"></div>
+    </section>
+
+    <!-- PROFILE -->
+    <section id="view-profile" class="view-panel hidden">
+      <div class="bg-white border border-slate-200 rounded-2xl p-8">
+        <h1 class="text-3xl font-bold text-slate-900">My Profile</h1>
+        <p class="mt-3 text-lg text-slate-500">
+          View your information and the skills you can teach.
+        </p>
+
+        <div class="grid md:grid-cols-2 gap-5 mt-9">
+          <div class="bg-slate-50 rounded-xl p-5">
+            <p class="font-semibold text-slate-500 text-sm">Name</p>
+            <p class="text-lg mt-2">Ashwathy</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-5">
+            <p class="font-semibold text-slate-500 text-sm">Department</p>
+            <p class="text-lg mt-2">Computer Science</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-5">
+            <p class="font-semibold text-slate-500 text-sm">Year</p>
+            <p class="text-lg mt-2">3rd Year</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-5">
+            <p class="font-semibold text-slate-500 text-sm">Skills I Can Teach</p>
+            <p class="text-lg mt-2">Python, DBMS, Web Development</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-5 md:col-span-2">
+            <p class="font-semibold text-slate-500 text-sm">About Me</p>
+            <p class="text-lg mt-2">
+              Computer Science student interested in helping peers learn programming.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AVAILABILITY -->
+    <section id="view-availability" class="view-panel hidden">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">My Availability</h1>
+        <p class="mt-3 text-lg text-slate-500">
+          View the days and time slots when you are available for tutoring.
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-xl p-6 flex justify-between">
+          <b>Monday</b><span class="text-slate-500">4:00 PM - 6:00 PM</span>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-6 flex justify-between">
+          <b>Wednesday</b><span class="text-slate-500">5:00 PM - 7:00 PM</span>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-6 flex justify-between">
+          <b>Saturday</b><span class="text-slate-500">10:00 AM - 12:00 PM</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FIND PEERS -->
+    <section id="view-find" class="view-panel hidden">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">Find a Peer</h1>
+        <p class="mt-3 text-lg text-slate-500">
+          Find students who can teach the skill you want to learn.
+        </p>
+      </div>
+
+      <div class="flex flex-col md:flex-row gap-3 mb-10">
+        <input id="skill-search"
+               oninput="showSuggestions()"
+               type="text"
+               placeholder="What do you want to learn? e.g. Python, React, UI/UX"
+               class="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-brand-500">
+        <button onclick="findPeers()"
+                class="bg-brand-600 hover:bg-brand-700 text-white px-7 py-3 rounded-xl font-semibold">
+          Find Peers
+        </button>
+      </div>
+
+      <div id="suggestions" class="hidden bg-white border border-slate-200 rounded-lg shadow-md w-52 mb-5">
+        <button onclick="selectSkill('Python')" class="block w-full text-left px-4 py-3 hover:bg-slate-50">Python</button>
+        <button onclick="selectSkill('UI/UX')" class="block w-full text-left px-4 py-3 hover:bg-slate-50">UI/UX</button>
+        <button onclick="selectSkill('DBMS')" class="block w-full text-left px-4 py-3 hover:bg-slate-50">DBMS</button>
+        <button onclick="selectSkill('Web Development')" class="block w-full text-left px-4 py-3 hover:bg-slate-50">Web Development</button>
+      </div>
+
+      <div id="peer-results"
+           class="bg-white border border-slate-200 rounded-2xl min-h-44 flex items-center justify-center text-center p-8">
+        <div>
+          <h2 class="text-xl font-bold text-slate-700">Find a student to learn from</h2>
+          <p class="mt-3 text-slate-500">
+            Search for a skill and discover peers who can teach you.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- REQUEST TUTORIAL -->
+    <section id="view-request" class="view-panel hidden">
+      <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-slate-900">Request a Tutorial</h1>
+        <p class="mt-3 text-lg text-slate-500">
+          Send a learning request to your selected peer.
+        </p>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-8 mt-8">
+          <div class="bg-slate-50 rounded-xl p-5 flex items-center gap-4 mb-8">
+            <div class="w-12 h-12 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+              R
+            </div>
+            <div>
+              <h3 id="selected-peer" class="font-bold text-lg">Rahul</h3>
+              <p id="selected-peer-skill" class="text-slate-500">Can teach Python</p>
+            </div>
+          </div>
+
+          <form onsubmit="submitTutorialRequest(event)" class="space-y-6">
+            <div>
+              <label class="block mb-2 font-medium">Subject</label>
+              <input id="request-subject" required value="Python"
+                     class="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-brand-500">
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div>
+                <label class="block mb-2 font-medium">Preferred Date</label>
+                <input id="request-date" type="date" required
+                       class="w-full border border-slate-300 rounded-xl px-4 py-3">
+              </div>
+              <div>
+                <label class="block mb-2 font-medium">Preferred Time</label>
+                <input id="request-time" type="time" required
+                       class="w-full border border-slate-300 rounded-xl px-4 py-3">
+              </div>
+            </div>
+
+            <div>
+              <label class="block mb-2 font-medium">Learning Goal</label>
+              <textarea id="request-goal" rows="5" required
+                        placeholder="What would you like to learn?"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-brand-500"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3">
+              <button type="button" onclick="switchTab('find')"
+                      class="px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200">
+                Cancel
+              </button>
+              <button type="submit"
+                      class="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold">
+                Send Request
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- REQUESTS -->
+    <section id="view-requests" class="view-panel hidden">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">Tutoring Requests</h1>
+        <p class="mt-3 text-lg text-slate-500">
+          Review learning requests from other students.
+        </p>
+      </div>
+      <div id="request-list" class="space-y-5"></div>
+    </section>
+
+    <!-- MY LEARNING -->
+    <section id="view-learning" class="view-panel hidden">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">My Learning Requests</h1>
+        <p class="mt-3 text-lg text-slate-500">
+          Track the tutorials you requested from other students.
+        </p>
+      </div>
+      <div id="learning-list" class="space-y-5"></div>
+    </section>
+
+  </main>
+
+<script>
+  let activeTab = 'dashboard';
+
+  let incomingRequests = [
+    {
+      name: 'Rahul',
+      subject: 'Python',
+      date: '25 September 2026',
+      time: '5:00 PM',
+      message: 'I need help with Python OOP concepts.',
+      status: 'Pending'
+    },
+    {
+      name: 'Anu',
+      subject: 'DBMS',
+      date: '27 September 2026',
+      time: '4:00 PM',
+      message: 'I would like to learn SQL and normalization.',
+      status: 'Accepted'
+    },
+    {
+      name: 'Sara',
+      subject: 'OOPS',
+      date: '10 September 2026',
+      time: '8:00 PM',
+      message: 'I would like to learn OOPS concept.',
+      status: 'Pending'
+    }
+  ];
+
+  let learningRequests = [
+    {
+      tutor: 'Rahul',
+      subject: 'Python',
+      date: '2026-12-12',
+      time: '07:00',
+      goal: 'I would like to learn Figma',
+      status: 'Pending'
+    },
+    {
+      tutor: 'Rahul',
+      subject: 'Python',
+      date: '2026-12-12',
+      time: '07:00',
+      goal: 'I would like to learn Python basics',
+      status: 'Pending'
+    }
+  ];
+
+  const peers = [
+    { name: 'Rahul', skill: 'Python', initials: 'R' },
+    { name: 'Anu', skill: 'DBMS', initials: 'A' },
+    { name: 'Sara', skill: 'UI/UX', initials: 'S' },
+    { name: 'Arjun', skill: 'Web Development', initials: 'A' }
+  ];
+
+  function switchTab(tab) {
+    activeTab = tab;
+
+    document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+
+    const target = document.getElementById('view-' + tab);
+    if (target) target.classList.remove('hidden');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.classList.remove('nav-active');
+      btn.classList.add('text-slate-600');
+    });
+
+    const nav = document.getElementById('nav-' + tab);
+    if (nav) {
+      nav.classList.add('nav-active');
+      nav.classList.remove('text-slate-600');
+    }
+
+    if (tab === 'dashboard') renderDashboard();
+    if (tab === 'requests') renderIncomingRequests();
+    if (tab === 'learning') renderLearning();
+  }
+
+  function toggleMobileMenu() {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+  }
+
+  function showSuggestions() {
+    const value = document.getElementById('skill-search').value.trim();
+    document.getElementById('suggestions').classList.toggle('hidden', value.length === 0);
+  }
+
+  function selectSkill(skill) {
+    document.getElementById('skill-search').value = skill;
+    document.getElementById('suggestions').classList.add('hidden');
+  }
+
+  function findPeers() {
+    const search = document.getElementById('skill-search').value.trim().toLowerCase();
+
+    const results = peers.filter(p =>
+      p.skill.toLowerCase().includes(search) ||
+      p.name.toLowerCase().includes(search)
+    );
+
+    const container = document.getElementById('peer-results');
+
+    if (!search) {
+      container.innerHTML = `
+        <div>
+          <h2 class="text-xl font-bold text-slate-700">Find a student to learn from</h2>
+          <p class="mt-3 text-slate-500">Search for a skill and discover peers who can teach you.</p>
+        </div>`;
+      return;
+    }
+
+    if (results.length === 0) {
+      container.innerHTML = `
+        <div>
+          <h2 class="text-xl font-bold text-slate-700">No students found</h2>
+          <p class="mt-3 text-slate-500">
+            Try searching for Python, DBMS, UI/UX or Web Development.
+          </p>
+        </div>`;
+      return;
+    }
+
+    container.className =
+      'bg-white border border-slate-200 rounded-2xl p-6 grid md:grid-cols-2 gap-4';
+
+    container.innerHTML = results.map(peer => `
+      <div class="border border-slate-200 rounded-xl p-5 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            ${peer.initials}
+          </div>
+          <div>
+            <h3 class="font-bold text-lg">${peer.name}</h3>
+            <p class="text-slate-500">Can teach ${peer.skill}</p>
+          </div>
+        </div>
+        <button onclick="openRequest('${peer.name}','${peer.skill}')"
+                class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm">
+          Request
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function openRequest(name, skill) {
+    document.getElementById('selected-peer').textContent = name;
+    document.getElementById('selected-peer-skill').textContent = 'Can teach ' + skill;
+    document.getElementById('request-subject').value = skill;
+    switchTab('request');
+  }
+
+  function submitTutorialRequest(event) {
+    event.preventDefault();
+
+    learningRequests.unshift({
+      tutor: document.getElementById('selected-peer').textContent,
+      subject: document.getElementById('request-subject').value,
+      date: document.getElementById('request-date').value,
+      time: document.getElementById('request-time').value,
+      goal: document.getElementById('request-goal').value,
+      status: 'Pending'
+    });
+
+    showToast('Tutorial request sent successfully');
+    event.target.reset();
+    switchTab('learning');
+  }
+
+  function renderDashboard() {
+    const container = document.getElementById('dashboard-requests');
+
+    container.innerHTML = incomingRequests.map((r, index) => `
+      <div class="bg-white border border-slate-200 rounded-2xl p-6">
+        <div class="flex justify-between items-start">
+          <h3 class="text-lg font-bold">${r.name}</h3>
+          <span class="px-4 py-2 rounded-full text-xs font-semibold
+            ${r.status === 'Accepted'
+              ? 'bg-green-50 text-green-700'
+              : 'bg-orange-50 text-orange-700'}">
+            ${r.status}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-[90px_1fr] gap-y-3 mt-6 text-sm">
+          <span class="text-slate-500">Subject</span><span>${r.subject}</span>
+          <span class="text-slate-500">Date</span><span>${r.date}</span>
+          <span class="text-slate-500">Time</span><span>${r.time}</span>
+        </div>
+
+        <div class="mt-5 bg-slate-50 rounded-xl p-4 text-slate-500">
+          ${r.message}
+        </div>
+
+        ${r.status === 'Pending' ? `
+          <div class="mt-5 flex gap-3">
+            <button onclick="acceptRequest(${index})"
+                    class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2 rounded-lg">
+              Accept
+            </button>
+            <button onclick="rejectRequest(${index})"
+                    class="bg-slate-100 hover:bg-slate-200 px-5 py-2 rounded-lg">
+              Reject
+            </button>
+          </div>` : ''}
+      </div>
+    `).join('');
+
+    document.getElementById('pending-count').textContent =
+      incomingRequests.filter(r => r.status === 'Pending').length;
+  }
+
+  function renderIncomingRequests() {
+    const container = document.getElementById('request-list');
+
+    container.innerHTML = incomingRequests.map((r, index) => `
+      <div class="bg-white border border-slate-200 rounded-2xl p-6">
+        <div class="flex justify-between items-start">
+          <h3 class="text-lg font-bold">${r.name}</h3>
+          <span class="px-4 py-2 rounded-full text-xs font-semibold
+            ${r.status === 'Accepted'
+              ? 'bg-green-50 text-green-700'
+              : 'bg-orange-50 text-orange-700'}">
+            ${r.status}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-[90px_1fr] gap-y-3 mt-6">
+          <span class="text-slate-500">Subject</span><span>${r.subject}</span>
+          <span class="text-slate-500">Date</span><span>${r.date}</span>
+          <span class="text-slate-500">Time</span><span>${r.time}</span>
+        </div>
+
+        <div class="mt-5 bg-slate-50 rounded-xl p-4">
+          <p class="text-slate-500 text-sm mb-1">Message</p>
+          <p>${r.message}</p>
+        </div>
+
+        ${r.status === 'Pending' ? `
+          <div class="mt-5 flex gap-3">
+            <button onclick="acceptRequest(${index})"
+                    class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2 rounded-lg">
+              Accept
+            </button>
+            <button onclick="rejectRequest(${index})"
+                    class="bg-slate-100 hover:bg-slate-200 px-5 py-2 rounded-lg">
+              Reject
+            </button>
+          </div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function acceptRequest(index) {
+    incomingRequests[index].status = 'Accepted';
+    showToast(incomingRequests[index].name + "'s request accepted");
+    renderDashboard();
+    if (activeTab === 'requests') renderIncomingRequests();
+  }
+
+  function rejectRequest(index) {
+    incomingRequests[index].status = 'Rejected';
+    showToast(incomingRequests[index].name + "'s request rejected");
+    renderDashboard();
+    if (activeTab === 'requests') renderIncomingRequests();
+  }
+
+  function renderLearning() {
+    const container = document.getElementById('learning-list');
+
+    container.innerHTML = learningRequests.map(r => `
+      <div class="bg-white border border-slate-200 rounded-2xl p-6">
+        <div class="flex justify-between items-start">
+          <h3 class="text-lg font-bold">${r.tutor}</h3>
+          <span class="px-4 py-2 rounded-full text-xs font-semibold bg-orange-50 text-orange-700">
+            ${r.status}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-[90px_1fr] gap-y-3 mt-6">
+          <span class="text-slate-500">Tutor</span><span>${r.tutor}</span>
+          <span class="text-slate-500">Subject</span><span>${r.subject}</span>
+          <span class="text-slate-500">Date</span><span>${r.date}</span>
+          <span class="text-slate-500">Time</span><span>${r.time}</span>
+        </div>
+
+        <div class="mt-5 bg-slate-50 rounded-xl p-4">
+          <p class="text-slate-500 text-sm mb-1">Learning Goal</p>
+          <p>${r.goal}</p>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.remove('hidden');
+
+    setTimeout(() => toast.classList.add('hidden'), 2200);
+  }
+
+  // Initial page
+  renderDashboard();
+  renderIncomingRequests();
+  renderLearning();
+</script>
+
+</body>
+</html>
